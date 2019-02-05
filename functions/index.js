@@ -2,9 +2,9 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase)
 
-exports.helloWorld = functions.https.onRequest((request, response) => {
- response.send("Hello from Firebase!");
-});
+// exports.helloWorld = functions.https.onRequest((request, response) => {
+//  response.send("Hello from Firebase!");
+// });
 
 const createNotification = (notification => {
   return admin.firestore().collection('notifications')
@@ -26,3 +26,35 @@ exports.projectCreated = functions.firestore
     return createNotification(notification);
 
 });
+
+// // better method?
+// exports.userJoined = functions.firestore
+//   .document('users/{uid}')
+//   .onCreate(doc => {
+//     const user = doc.data();
+//     const notification = {
+//       content: 'New user added',
+//       user: `${user.firstName} ${user.lastName}`,
+//       time: admin.firestore.FieldValue.serverTimestamp()
+//     }
+//     return createNotification(notification);
+//   })
+
+  exports.userJoined = functions.auth.user()
+  .onCreate(user => {
+
+    return admin.firestore.collection('users')
+      .doc(user.uid).get().then(doc => {
+
+        const newUser = doc.data();
+        const notification = {
+          content: 'joined the party',
+          user: `${newUser.firstName} ${newUser.lastName}`,
+          time: admin.firestore.FieldValue.serverTimestamp()
+        }
+
+        return createNotification(notification);
+
+      })
+    
+  })
